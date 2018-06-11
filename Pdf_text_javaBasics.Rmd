@@ -1,0 +1,140 @@
+---
+title: "Pdf_text"
+author: "Vijay Mudivedu"
+date: '2018-06-11'
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## PDF to text
+
+```{r echo = FALSE}
+remove(list = ls())
+
+# install.packages("wordcloud")
+# install.packages("pdftools")
+# install.packages("tm")
+# install.packages("googledrive")
+
+library(wordcloud)
+library(RColorBrewer)
+library(tidyverse)
+library(pdftools)
+library(tm)
+library(googledrive)
+
+setwd(
+  "/Users/vmudivedu/OneDrive/OneDrive - Atimi Software Inc/Upgrad/case study/pdf_to_text"
+)
+```
+* Download the data from google drive
+
+```{r echo = FALSE}
+drive_download(as_dribble(
+  as_id(
+    "https://drive.google.com/file/d/1gZCnlhwVMBIE0SugUUxDIgQrfVz-cDQR/"
+  )
+), overwrite = TRUE)
+```
+* Store the data in the
+```{r echo = FALSE}
+java_basic_pdf_to_text <-  pdf_text(pdf = "JavaBasics-notes.pdf")
+#head(java_basic_pdf_to_text)
+str(java_basic_pdf_to_text)
+```
+
+### Data Cleaning
+
+* Remove the "Java Basics" header, special characters, the Footers
+```{r echo=FALSE}
+cleaned_java_basics <-
+  str_replace_all(string = java_basic_pdf_to_text,
+                  pattern = "Java Basics\n|\\\n|\\•|[[:digit:]]|© 1996-2003 jGuru.com. All Rights Reserved.|Java Basics -",
+                  replacement = "")
+
+```
+
+* Combining all the text from different pages.
+
+```{r echo = FALSE}
+reviewed_text <- paste(cleaned_java_basics, collapse = "")
+#reviewed_text
+crps_java_basics <- Corpus(VectorSource(reviewed_text))
+crps_java_basics
+```
+
+#### Further Cleaning of text
+
+* Lower case
+
+```{r echo = FALSE}
+crps_cleaned <-
+  tm_map(crps_java_basics, content_transformer(tolower))
+```
+
+* Removing punctuations
+```{r echo = FALSE}
+crps_cleaned <- tm_map(crps_cleaned, removePunctuation)
+```
+
+* Removing white spaces
+```{r echo = FALSE}
+crps_cleaned <- tm_map(crps_cleaned, stripWhitespace)
+```
+* Removing numbers
+```{r echo = FALSE}
+crps_cleaned <- tm_map(crps_cleaned, removeNumbers)
+```
+* Removing stopwords
+```{r echo = FALSE}
+crps_cleaned <-
+  tm_map(crps_cleaned, removeWords, stopwords("english"))
+```
+
+* Creating Document term-matirx for the cleaned text
+* Most frequent terms are:
+```{r echo=FALSE}
+dtm <- DocumentTermMatrix(crps_cleaned)
+dtm2 <- as.matrix(dtm)
+ft_java_basics <- findFreqTerms(x = dtm,
+                                lowfreq = 10,
+                                highfreq = Inf)
+ft_java_basics
+```
+
+* Frequency of the most frequent terms
+```{r echo = FALSE}
+freq_java_basic <- colSums(dtm2)
+freq_java_basic <- sort(freq_java_basic, decreasing = TRUE)
+head(freq_java_basic, n = 50)
+```
+* creating the word dataframe
+```{r echo = FALSE}
+word_df <-
+  data.frame(words = names(freq_java_basic),
+             freq = as.vector(freq_java_basic))
+head(word_df)
+```
+
+* Printing the Keywords In Java_basic in the text file.
+```{r echo= FALSE}
+
+set.seed(100)
+wordcloud(
+  words = word_df$words,
+  freq = word_df$freq,
+  min.freq = 5,
+  random.order = F,
+  max.words = 200,
+  rot.per = 0.35,
+  colors = brewer.pal(n = 8, name = "Dark2"),
+  random.color = F
+)
+```
