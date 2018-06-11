@@ -88,6 +88,8 @@ head(freq_java_basic, n = 50)
 word_df <-
   data.frame(words = names(freq_java_basic),
              freq = as.vector(freq_java_basic))
+# writing the csv word fle to 
+write.csv(x = word_df,file = "Output/words.csv")
 
 # Printing the Keywords In Java_basic in the text file.
 library(RColorBrewer)
