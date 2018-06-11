@@ -120,8 +120,13 @@ head(freq_java_basic, n = 50)
 word_df <-
   data.frame(words = names(freq_java_basic),
              freq = as.vector(freq_java_basic))
+write.csv(x = word_df,file = "words.csv")
 head(word_df)
 ```
+
+
+
+
 
 * Printing the Keywords In Java_basic in the text file.
 ```{r echo= FALSE}
