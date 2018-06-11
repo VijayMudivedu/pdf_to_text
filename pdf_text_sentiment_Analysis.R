@@ -1,83 +1,101 @@
+remove(list = ls())
+
+#install.packages("SnowballC")
+# install.packages("wordcloud")
 # install.packages("pdftools")
 # install.packages("tm")
 # install.packages("googledrive")
-install.packages("Rpoppler")
-library(Rpoppler)
+
+library(SnowballC)
+library(wordcloud)
 library(tidyverse)
 library(pdftools)
 library(tm)
 library(googledrive)
 
-# pdf_file <- read.csv(file = "http://kmmc.in/wp-content/uploads/2014/01/lesson2.pdf")
+setwd("/Users/vmudivedu/OneDrive/OneDrive - Atimi Software Inc/Upgrad/case study/pdf_to_text")
+# download the data from google drive
+drive_download(as_dribble(as_id("https://drive.google.com/file/d/1gZCnlhwVMBIE0SugUUxDIgQrfVz-cDQR/")),overwrite = TRUE)
+# store the data in the
+java_basic_pdf_to_text <-  pdf_text(pdf = "JavaBasics-notes.pdf")
+View(java_basic_pdf_to_text)
+str(java_basic_pdf_to_text)
 
-# java_basics_pdf_file_text <- pdftools::pdf_data(pdf = "JavaBasics-notes.pdf")
+#----------------------------
+# Data Cleaning
+#----------------------------
 
-text_from_pdf1 <-  pdf_text(pdf = "JavaBasics-notes.pdf")
-View(text_from_pdf1)
-str(text_from_pdf1)
-#remove(text_from_pdf)
+# remove the "Java Basics" header
+cleaned_java_basics <- str_replace_all(string = java_basic_pdf_to_text,pattern = "Java Basics\n|\\\n|\\•|[[:]]|© 1996-2003 jGuru.com. All Rights Reserved.|Java Basics -",replacement = "")
 
-java_basic_text <- str_split(string = text_from_pdf1,pattern = "Java Basics\n",simplify = T) #%>% head()
-View(java_basic_text)
-java_basic_text <- as.data.frame(java_basic_text,stringsAsFactors = F)
-java_basic_text <- java_basic_text[,-1]
+# java_basic_text <- str_split(string = java_basic_pdf_to_text,pattern = "Java Basics\n",simplify = T)
+# View(java_basic_text)
+# # convert the
+# java_basic_text <- as.data.frame(java_basic_text,stringsAsFactors = F)
+# java_basic_text <- java_basic_text[,-1]
+# 
+# str(java_basic_text)
+# 
+# # copy the data
+# java_basic_text$V2[1] <- java_basic_text$V3[1]
+# java_basic_text <- java_basic_text[,-2]
+# 
 
-str(java_basic_text)
-
-# copy the data
-java_basic_text$V2[1] <- java_basic_text$V3[1]
-
-java_basic_text <- java_basic_text[,-2]
-
-
-# combining all the text fro mdifferent pages.
-reviewed_text <- paste(java_basic_text,collapse = "")
+# combining all the text from different pages.
+reviewed_text <- paste(cleaned_java_basics,collapse = "")
 reviewed_text
 
+#
 review_srce <- VectorSource(reviewed_text)
 review_srce
 
-elmnt_java <- getElem(stepNext(x = review_srce))
-elmnt_java
-result <- readPlain(elem = elmnt_java,language = "",id = "id1")
-meta(result)
-
-
+# Corpora
 crps_java_basics <- Corpus(review_srce)
 crps_java_basics
 
+# Further Cleaning of text
 
-# cleaning of text
-
+# Lower case
 crps_cleaned <- tm_map(crps_java_basics,content_transformer(tolower))
 
-f <- content_transformer(function(x,pattern) gsub(pattern,"",x)) 
-crps_cleaned <- tm_map(crps_cleaned,f,"\\•")
+# # special characters
+# f <- content_transformer(function(x,pattern) gsub(pattern,"",x)) 
+# crps_cleaned <- tm_map(crps_cleaned,f,"\\•")
 
-
+# removing punctuations
 crps_cleaned <- tm_map(crps_cleaned,removePunctuation)
+
+# removing white spaces
 crps_cleaned <- tm_map(crps_cleaned,stripWhitespace)
+
+# removing numbers
 crps_cleaned <- tm_map(crps_cleaned,removeNumbers)
-#crps_cleaned <- tm_map(crps_cleaned,content_transformer(removeSparseTerms))
+
+# removing stopwords
 crps_cleaned <- tm_map(crps_cleaned,removeWords,stopwords("english"))
 
 
-
-#crp_cleaned <- tm_map(crps_cleaned,FUN = 
-# str_replace_all(string = crps_cleaned, pattern = "[^[:punct:]]",replacement = "")
-# str_remove_all(string = crps_cleaned,pattern = "\\•|\\©|[^[:punct:]]|[^[:punct:]]")
-
-
-# document term-matirx
+# document term-matirx for the cleaned text
 dtm <- DocumentTermMatrix(crps_cleaned)
 dtm2 <- as.matrix(dtm)
-dtm
+head(dtm2)
+
+# Most frequent terms are:
+ft_java_basics <- findFreqTerms(x = dtm,lowfreq = 10,highfreq = Inf)
+ft_java_basics
 
 # frequency of the most frequent terms
-
 freq_java_basic <- colSums(dtm2)
-freq_java_basic <- sort(freq_java_basic,decreasing = T)
-#freq_java_basic
-View(freq_java_basic)
-# 
-# stopwords(kind = "en")
+freq_java_basic <- sort(freq_java_basic,decreasing = TRUE)
+
+head(freq_java_basic,n = 50)
+# creating the word dataframe
+word_df <- data.frame(words = names(freq_java_basic),freq = as.vector(freq_java_basic))
+
+# Printing the hava Keywords in the text file.
+library(RColorBrewer)
+set.seed(100)
+wordcloud(words = word_df$words,freq = word_df$freq,
+          min.freq = 5,random.order = F,max.words = 200,
+          rot.per = 0.35,colors = brewer.pal(n = 8,name = "Dark2"),
+          random.color = F)
