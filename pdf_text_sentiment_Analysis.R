@@ -1,12 +1,10 @@
 remove(list = ls())
 
-#install.packages("SnowballC")
 # install.packages("wordcloud")
 # install.packages("pdftools")
 # install.packages("tm")
 # install.packages("googledrive")
 
-library(SnowballC)
 library(wordcloud)
 library(tidyverse)
 library(pdftools)
@@ -58,10 +56,6 @@ crps_java_basics
 # Lower case
 crps_cleaned <- tm_map(crps_java_basics,content_transformer(tolower))
 
-# # special characters
-# f <- content_transformer(function(x,pattern) gsub(pattern,"",x)) 
-# crps_cleaned <- tm_map(crps_cleaned,f,"\\•")
-
 # removing punctuations
 crps_cleaned <- tm_map(crps_cleaned,removePunctuation)
 
@@ -92,7 +86,7 @@ head(freq_java_basic,n = 50)
 # creating the word dataframe
 word_df <- data.frame(words = names(freq_java_basic),freq = as.vector(freq_java_basic))
 
-# Printing the hava Keywords in the text file.
+# Printing the Keywords In Java_basic in the text file.
 library(RColorBrewer)
 set.seed(100)
 wordcloud(words = word_df$words,freq = word_df$freq,
